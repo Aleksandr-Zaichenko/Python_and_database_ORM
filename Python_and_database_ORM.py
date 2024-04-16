@@ -1,8 +1,7 @@
 import json
 
 import sqlalchemy
-import sqlalchemy as sq
-from sqlalchemy.orm import declarative_base, relationship, sessionmaker
+from sqlalchemy.orm import sessionmaker
 
 from models import create_tables, Publisher, Shop, Book, Stock, Sale
 
@@ -42,13 +41,23 @@ session.commit()
 
 # Задание 2, составить запрос выборки магазинов, продающих целевого издателя.
 
-def get_book_sale(writer=input("Введите имя издателя: ")):
-    selected = session.query(Book.title, Shop.name, Sale.price, Sale.date_sale) \
-               .join(Publisher).join(Stock).join(Shop).join(Sale).filter(Publisher.name.like(writer))
-    for s in selected.all():
-        print(f'{s[0]} | {s[1]} | {str(s[2])} | {str(s[3])}')
+def get_shops(writer):
+    selected = session.query(
+        Book.title, Shop.name, Sale.price, Sale.date_sale
+    ).select_from(Shop).\
+        join(Stock).\
+        join(Book).\
+        join(Publisher).\
+        join(Sale)
+    if writer.isdigit():
+        result = selected.filter(Publisher.id == writer).all()
+    else:
+        result = selected.filter(Publisher.name == writer).all()
+    for title, name, price, date_sale in result:
+        print(f"{title: <40} | {name: <10} | {price: <8} | {date_sale.strftime('%d-%m-%Y')}")
 
-
-get_book_sale()
+if __name__ == '__main__':
+    writer = input("Введите имя или идентификатор издателя: ")
+    get_shops(writer)
 
 session.close()
